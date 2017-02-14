@@ -1,0 +1,27 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_VERBOSE=1
+
+%:
+	dh $@ --with python2,python3,sphinxdoc --buildsystem=pybuild
+
+override_dh_installchangelogs:
+	dh_installchangelogs doc/changelog.rst
+
+override_dh_compress:
+	dh_compress -X.html
+
+override_dh_auto_test:
+	# Testing requires a running MongoDB instance
+	# https://jira.mongodb.org/browse/PYTHON-683
+
+override_dh_installdocs:
+	dh_installdocs
+	PYTHONPATH=. http_proxy='http://127.0.0.1:9/' sphinx-build -N -q -E -bhtml doc/ debian/python-pymongo-doc/usr/share/doc/python-pymongo-doc/html/
+
+override_dh_sphinxdoc:
+ifeq (,$(findstring nodoc,$(DEB_BUILD_OPTIONS)))
+	# Run dh_sphinxdoc only on python-pymongo-doc, see #745690
+	dh_sphinxdoc -ppython-pymongo-doc
+endif
